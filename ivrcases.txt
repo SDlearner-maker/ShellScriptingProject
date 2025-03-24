@@ -1,0 +1,32 @@
+#!/bin/bash
+
+i_option=false;
+r_option=false;
+v_option=false;
+
+# Parse out option arguments and exit on invalid option
+
+if [[ $1 == "-"* ]]; then
+        case $1 in
+          -i ) i_option=true;
+              echo "i chosen";;
+          -v ) v_option=true;
+              ;;
+          -r ) r_option=true;
+              ;;
+          *) echo "next please";
+                 exit 1;
+            ;;
+        esac
+        shift
+fi
+
+# Shift to next script argument after options
+#shift $(($OPTIND - 1))
+
+#echo "hello"
+
+for x in $*
+do
+        echo $x
+done

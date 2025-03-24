@@ -1,0 +1,61 @@
+#!/bin/bash
+
+duplicateFile=0
+
+#restore function
+restoreFunc(){
+
+        fileRestoredPath=$(grep -w $1 $HOME/.restore.info | cut -d":" -f2) #path before it was deleted
+        fileTobeMovedPath=$HOME/recyclebin/$1 #current path of file
+
+        #filePreviousName=$(basename $fileRestoredPath) #name of file before it was deleted
+        #echo "before deltion the name $filePreviousName"
+
+        #copying .restore.info contents without the entry of restored file
+        sed "/$1/d" $HOME/.restore.info > tempresults
+        #copying the final results into .restore.info again
+        cp tempresults $HOME/.restore.info
+
+        mv $fileTobeMovedPath $fileRestoredPath 2>/dev/null #moving the file back to original location
+}
+
+#No input passed
+if [ $# -eq 0 ]
+then
+        echo "Missing argument"
+        exit 1
+
+#file not inside recycle bin
+elif [ ! -e $HOME/recyclebin/$1 ]
+then
+        echo "file doesn't exist"
+        exit 1
+
+#file eligible to be restored
+else
+        dirName=$(dirname $(grep $1 $HOME/.restore.info | cut -d":" -f2)) #directory of file
+
+        #check if directory exists or not. If not, create one before restoration
+        if [ ! -e $dirName ]; then
+                #create directory as it doesn't exist
+                mkdir -p $dirName
+                restoreFunc $1
+        else
+                fileRestoredPath=$(grep -w $1 $HOME/.restore.info | cut -d":" -f2) #path before it was deleted
+                if [ -e $fileRestoredPath ]; then
+                        read -p "Do you want to replace an existing file? " answer
+                        case $answer in
+                                [Yy]*)
+                                        echo "replacing original file"
+                                        duplicateFile=1
+                                        restoreFunc $1;;
+                                *)
+                                        echo "Cannot replace original file"
+                                        exit 1;;
+                        esac
+                fi
+                restoreFunc $1
+        fi
+
+fi
+

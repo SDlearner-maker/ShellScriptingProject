@@ -1,0 +1,152 @@
+#!/bin/bash
+
+#create recycle bin folder
+mkdir $HOME/recyclebin 2>/dev/null
+
+#path of the script
+scriptPath=$(readlink -f recycle)
+
+#options
+i_option=false;
+r_option=false;
+v_option=false;
+
+#No arguments passed
+if [ $# -eq 0 ]; then
+        echo "Missing argument"
+        exit 1
+
+#if one or more than one arguments passed#!/bin/bash
+
+#create recycle bin folder
+mkdir $HOME/recyclebin 2>/dev/null
+
+#path of the script
+scriptPath=$(readlink -f recycle)
+
+#options
+i_option=false;
+r_option=false;
+v_option=false;
+
+#No arguments passed
+if [ $# -eq 0 ]; then
+        echo "Missing argument"
+        exit 1
+
+#if one or more than one arguments passed
+else
+        #if the first argument is an option
+        if [[ $1 == "-"* ]]; then
+                case $1 in
+                        -i) i_option=true;;
+                        -v) v_option=true;;
+                        -r) r_option=true;;
+                        -iv) i_option=true;
+                             v_option=true;;
+                        -vi) i_option=true;
+                             v_option=true;;
+                        *) echo "invalid option"
+                                exit 1;;
+                 esac
+                 shift
+                 if [ $# -eq 0 ]; then
+                        echo "no file provided"
+                        exit 1
+                 fi
+        fi
+fi
+
+#to delete a folder recursively
+#first, all files are deleted
+#then, the empty folders are deleted
+recursiveDel(){
+
+        filesOnly=$(find $(readlink -f $x) -type f)     #all files in the directory
+
+        #perform deletion of each file
+        for fil in $filesOnly
+        do
+                absolutePath=$(readlink -f $fil)
+                deleteFunc $absolutePath
+        done
+
+        absolutePathDir=$(readlink -f $x)       #absolute path of directory
+        find $absolutePathDir -type d -empty -delete    #delete all empty folders including the directory
+
+}
+
+#Function to delete a file using the absolute path of file
+deleteFunc(){
+
+        inodenumber=$(ls -i $absolutePath | cut -d" " -f1) #inode number
+
+        filenamesaved=$(basename $absolutePath) #name of file originally
+
+        filenametrashed=$filenamesaved"_"$inodenumber #renaming file to move into recycle bin
+
+        filenamerecorded=$filenametrashed":"$absolutePath #file record name
+
+        mv $absolutePath $HOME/recyclebin/$filenametrashed #file moved into recycle bin
+        echo $filenamerecorded >> $HOME/.restore.info #file record name saved into .restore.info file
+
+        #if -v selected, provide details
+        if [ $v_option = true ]; then
+                echo "Deleted"
+        fi
+}
+
+#if -v option provided and a file deletion is rejected
+optionVIecho(){
+
+        if [ $v_option = true ]; then
+                echo "No deletion performed"
+        fi
+}
+
+#procedures to check what kind so files are to be deleted, and if these are valid
+preDelete(){
+
+        #all files checked one by one
+        for x in $*
+        do
+                absolutePath=$(readlink -f $x)  #absolute path of the file
+
+                #file doesn't exist
+                if [ ! -e $absolutePath ]; then
+                        echo "doesn't exist"
+                        exit 1
+
+                #file is a directory
+                elif [ -d $x ]; then
+
+                        #directory will be deleted only of -r option provided
+                        if [ $r_option = true ]; then
+                                recursiveDel $x
+                        else
+                                echo "it is a directory not a file. use -r option to delete directory"
+                        fi
+
+                #if the file to be deleted is the recycle script, will exit
+                elif [ $scriptPath == $absolutePath ]; then
+                        echo "Attempting to delete recycle- operation aborted"
+                        exit 1
+
+                #will proceed for deletion of file
+                else
+                        #if -i option provided, will ask before deleting a file
+                        if [ $i_option = true ]; then
+                                read -p "Do you want to delete $x " agreeDelete
+                                case $agreeDelete in
+                                        [Yy]*)
+                                                deleteFunc $absolutePath ;;
+                                        *)      optionVIecho;;
+                                esac
+                        else
+                                deleteFunc $absolutePath
+                        fi
+                fi
+        done
+}
+
+preDelete $*

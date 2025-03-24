@@ -1,0 +1,30 @@
+#!/bin/bash
+mkdir $HOME/mydir 2>/dev/null
+#if-else statement
+if [ $# -eq 0 ]
+then
+        echo "Missing operand"
+        exit 1
+elif [ ! -e $1 ]
+then
+        echo "file doesn't exist"
+        exit 1
+elif [ -d $1 ]
+then
+        echo "this is a directory, not file"
+        exit 1
+elif [ $1 = del2 ]
+then
+        echo "cannot delete this file"
+        exit 1
+else
+        absolutePath=$(readlink -f $1)
+        inodenumber=$(ls -i $1 | cut -d" " -f1)
+        filenamesaved=$(ls -i $1 | cut -d" " -f2)
+        filenametrashed=$filenamesaved"_"$inodenumber
+        filenamerecorded=$filenametrashed":"$absolutePath
+        #mv $1 $HOME/mydir
+        #echo "$1"
+        mv $1 $HOME/mydir/$filenametrashed
+        echo $filenamerecorded >> $HOME/.restore.info
+fi

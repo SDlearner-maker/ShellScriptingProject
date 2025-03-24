@@ -1,0 +1,42 @@
+#!/bin/bash
+
+#create recycle bin folder
+mkdir $HOME/recyclebin 2>/dev/null
+
+#No arguments passed
+if [ $# -eq 0 ]
+then
+        echo "Missing argument"
+        exit 1
+#File doesn't exist
+elif [ ! -e $1 ]
+then
+        echo "file doesn't exist"
+        exit 1
+#Argument is a directory
+elif [ -d $1 ]
+then
+        echo "this is a directory, not file"
+        exit 1
+#cannot delete the script
+elif [ $1 = recycle ]
+then
+        echo "cannot delete this file"
+        exit 1
+#delete the file
+else
+        read -p "Do you want to delete $1" answer
+        case $answer in
+                [Yy]*)
+                        absolutePath=$(readlink -f $1) #absolute path of file
+                        inodenumber=$(ls -i $1 | cut -d" " -f1) #inode number
+                        filenamesaved=$(ls -i $1 | cut -d" " -f2) #name of file originally
+                        filenametrashed=$filenamesaved"_"$inodenumber #renaming file to move into recycle bin
+                        filenamerecorded=$filenametrashed":"$absolutePath #file record name
+                        mv $1 $HOME/recyclebin/$filenametrashed #file moved into recycle bin
+                        echo $filenamerecorded >> $HOME/.restore.info #file record name saved into .restore.info file
+                        echo "file deleted";;
+
+                *)      echo "file won't be deleted";;
+        esac
+fi

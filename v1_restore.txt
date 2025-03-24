@@ -1,0 +1,24 @@
+#!/bin/bash
+#if-else statement
+if [ $# -eq 0 ]
+then
+        echo "Missing operand"
+        exit 1
+elif [ ! -e $HOME/mydir/$1 ]
+then
+        echo "file doesn't exist"
+        exit 1
+else
+
+        fileRestoredPath=$(grep $1 $HOME/.restore.info | cut -d":" -f2)
+        fileTobeMovedPath=$HOME/mydir/$1
+        filePath=$(readlink -f $fileRestoredPath)
+        echo $fileRestoredPath
+        echo $filePath
+        sed "/$1/d" $HOME/.restore.info > tempresults
+        cat tempresults
+        cat $HOME/.restore.info
+        cp tempresults $HOME/.restore.info
+        mv $fileTobeMovedPath $fileRestoredPath
+        echo "ok"
+fi
